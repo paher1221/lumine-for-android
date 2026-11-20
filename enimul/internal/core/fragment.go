@@ -118,6 +118,13 @@ func sendRecords(conn net.Conn, clientHello []byte,
 					if err := sendWithOOB(conn, chunk[:l-1], chunk[l-1]); err != nil {
 						return E.WithStr("oob 1", err)
 					}
+				} else {
+					// Plain fragmentation: the first record must still be
+					// written, otherwise the server only ever sees the tail
+					// of the ClientHello and rejects the handshake.
+					if _, err := conn.Write(chunk); err != nil {
+						return E.WithStr("write record 1", err)
+					}
 				}
 			} else if i == 1 && oobex {
 				if err := sendWithOOB(conn, chunk, 0x0); err != nil {
